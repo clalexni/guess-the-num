@@ -69,23 +69,16 @@ skip:
 # Function: Yes_no_prompter
 # Parameter: none
 # Return:  $v0 contains answer of yes/no (1/0)
-# Description: Keep prompting user to input yes or no, and return the answer. Display error message if input is not as expected
+# Description: 
 Yes_no_prompter:
 
 prompt:
-	#read input as character
-	li $v0, 12
+	li $v0, 50
+	la $a0, yes_no_prompt
 	syscall
-	
-	# load character byte 'y' and 'n' to compare with input
-	li $t1, 'y'
-	li $t0, 'n'
-	
-	beq $v0, $t1, return_yes
-	beq $v0, $t0, return_no
-	
-	# if answer is not 'y' or 'n'
-	j error_message
+	beq $a0, 0, return_yes
+	beq $a0, 1, return_no
+	beq $a0, 2, good_bye
 	
 return_yes:
 	li $v0, 1
@@ -95,12 +88,7 @@ return_no:
 	li $v0, 0
 	jr $ra
 	
-error_message:
-	li, $v0, 4
-	la $a0, error_message_prompt
-	syscall
-	
-	j prompt
+
 
 # Function: Print_card_content
 # Parameter: None
@@ -157,3 +145,60 @@ add_new_line:
 exit:
         jr $ra # go back to main
 
+# Function: Sound_maker
+# Description: create a midi sound that plays when user enters inavlid or dessapointing result	
+Sound_maker:
+
+       li $v0, 31 
+       la $a0, pitch
+       la $a1, duration
+       la $a2, instrument
+       la $a3, volume
+       syscall
+       
+       jr $ra
+
+     
+#Function: Random card generator
+#Description: Card number goes from 1 to 6 which is randomized and then stored into card number list aarray
+number_list: 
+reset_values:
+     li $t9, 24
+     reset: 
+         blt $t9, $zero, out
+         sw $zero, card_number_list($t9)
+         subi $t9, $t9, 4
+         j reset     
+     
+out:     
+     
+     
+     li $t1, 0
+   
+    random:
+          beq $t1, 24, ext
+          li $v0, 42
+          li $a1, 7
+          li $a0,1
+          syscall
+   
+         li $t5, 0
+    compare:  
+         beq $t5, 24, store
+         lw $t6, card_number_list($t5)
+         beq $a0, $t6, do_not_store
+         addi $t5, $t5, 4
+         j compare
+   
+    store:
+        sw $a0, card_number_list($t1)
+        addi $t1,$t1, 4
+        j random
+
+     do_not_store:
+        j random
+    
+     ext:
+        jr $ra
+
+     

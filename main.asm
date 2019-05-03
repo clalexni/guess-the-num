@@ -2,36 +2,57 @@
 
 # allocates 128 bytes for a card
 card:	.space	128
-
-card_number_list: .word  1, 2, 3, 4, 5, 6
+card_number_list: .space 24
 
 # prompts
-start_game_prompt:      .asciiz	"\nThink of a number between 0 and 63. Press Enter (or any other key) to start: "
-yes_no_prompt:  	.asciiz	"\nIs your number in the group of numbers? (y/n): "
-play_again_prompt:      .asciiz	"\n\nDo you want to play again? (y/n): "
-error_message_prompt:	.asciiz	"\nPlease enter either 'y' or 'n': "
+start_game_prompt:      .asciiz	"Think of a number between 0 and 63. Press YES to continue or Cancel to Exit: "
+start_game_prompt1:      .asciiz	"Think of a number between 0 and 63. Press YES to continue or Cancel to Exit: "
+yes_no_prompt:  	.asciiz	"\nIs your number on the card below? "
+play_again_prompt:      .asciiz	"\nDo you want to play again?: "
+
 final_answer_prompt: 	.asciiz "\nThe number you picked is : "
+Welcome:          .asciiz "Welcome friend, Alex and Samir are about to read your mind. Are you ready?"
+Afraid:           .asciiz "We got a daddy`s girl or mommy`s boy in the house? Come back when you grow up"
+bye:              .asciiz "\nYou have decided to exit the game, Thanks for playing. Good bye"   
+
 
 # formatting tools
 one_space:	.asciiz " "
 two_spaces:	.asciiz "  "
 new_line:	.asciiz "\n"
 
+#Sound making items
+pitch: .byte 15
+duration: .word 10000
+instrument: .byte 90
+volume: .byte 127
+
 .text
 main:
-	# prompt game starter
-	li $v0, 4
-	la $a0, start_game_prompt
+     li $v0, 50
+     la $a0, Welcome
+     syscall
+     beq $a0, 0, prompt_game_starter
+     beq $a0, 1, A_fraid
+     beq $a0, 2, Exit_game
+     
+    
+
+prompt_game_starter:
+
+	li $v0, 50
+	la $a0, start_game_prompt1
 	syscall
+	beq $a0, 0, Initialize_Variables
+	beq $a0, 1, good_bye 
+	beq $a0, 2, good_bye  
+
 	
-	# read any input to start
-	li $v0, 12
-	syscall
-	
-	# Initialize Variables
-	li $s0, 0                  # loop counter
+Initialize_Variables:
+        li $s0, 0                  # loop counter
+        jal number_list            # Call number list to randomly display cards
 	la $s1, card_number_list   # pointer to card_number_list
-	li $s2, 0   		   # $t2 contains accumulated answer
+	li $s2, 0   		   # $s2 contains accumulated answer
 	
 Loop:	beq $s0, 6, Play_again_prompter
 	
@@ -43,9 +64,12 @@ Loop:	beq $s0, 6, Play_again_prompter
 	jal Print_card_content
 	
 	# prompt user's input of yes or no, returned value $v0 wil contain 1/0
+	li $v0, 50
 	la $a0, yes_no_prompt
-	li $v0, 4
-	syscall
+	
+	#la $a0, yes_no_prompt
+	#li $v0, 4
+	#syscall
 	
 	jal Yes_no_prompter
 	
@@ -66,33 +90,45 @@ Loop:	beq $s0, 6, Play_again_prompter
 	j Loop
 	
 Play_again_prompter:
+
 	
 	# Display final answer
-	li $v0, 4
+	li $v0, 56
 	la $a0, final_answer_prompt
+	move $a1,$s2
 	syscall
 	
-	li $v0, 1
-	move $a0, $s2 # s2 now contains final accumulated answer
-	syscall
 	
 	# Ask whether user want to play again or not
-	li $v0, 4
+	li $v0, 50
 	la $a0, play_again_prompt
 	syscall
+	beq $a0, 0, prompt_game_starter
+	beq $a0, 1, good_bye
+	beq $a0, 2, good_bye   
 	
-	# call function Yes_no_prompter
-	jal Yes_no_prompter
-	
-	# if answer is no, exit game. Else, jump back to main to restart the game
-	beq $v0, 0, Exit_game
-	j main
-	
+
+
+#Return message dialog and exit program 
+A_fraid:
+     li $v0, 55
+     la $a0, Afraid
+     li $a1, 2
+     syscall
+     j Exit_game
+
+#Exits program at user request     
+good_bye:
+     jal Sound_maker
+     li $v0, 55
+     la $a0, bye
+     li $a1, 2
+     syscall
+     j Exit_game
+       	
 Exit_game:
 	li $v0, 10
 	syscall
 
 
 .include "subroutines.asm"
-
-	
