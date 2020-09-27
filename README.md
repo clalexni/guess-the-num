@@ -1,2 +1,2 @@
-# guess-the-num
-MIPS Assembly: guess the number
+# some-mips-exercises
+guess the number
