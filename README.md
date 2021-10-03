@@ -1,2 +1,2 @@
-# some-mips-exercises
+# mips-toy-problem
 guess the number
